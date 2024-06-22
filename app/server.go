@@ -24,10 +24,11 @@ func main() {
 			os.Exit(1)
 		}
 		go handleConnection(conn)
+
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, dirFlag ...string) {
 	defer conn.Close()
 	request, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
@@ -39,6 +40,7 @@ func handleConnection(conn net.Conn) {
 	switch {
 	case path == "/":
 		response = ([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+
 	case strings.HasPrefix(path, "/echo/"):
 		message := path[6:]
 		response = ([]byte(fmt.Sprintf(
@@ -53,6 +55,18 @@ func handleConnection(conn net.Conn) {
 			len(request.UserAgent()),
 			request.UserAgent(),
 		)))
+
+	case strings.HasPrefix(path, "/files/"):
+		fileName := strings.TrimPrefix(path, "/files/")
+		if bytes, err := os.ReadFile(os.Args[2] + fileName); err == nil {
+			response = ([]byte(fmt.Sprintf(
+				"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s",
+				len(bytes),
+				string(bytes),
+			)))
+		} else {
+			response = ([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		}
 	default:
 		response = ([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 	}
