@@ -1,10 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -17,25 +18,37 @@ func main() {
 	}
 
 	conn, err := l.Accept()
-	req := make([]byte, 1024)
-	conn.Read(req)
 	if err != nil {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
-	path := strings.Split(string(req), " ")
+	request, err := http.ReadRequest(bufio.NewReader(conn))
+	if err != nil {
+		os.Exit(1)
+	}
+	defer conn.Close()
+	path := request.URL.Path
+	var response []byte
+
 	switch {
-	case strings.HasPrefix(string(req), "GET / HTTP/1.1"):
-		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	case strings.HasPrefix(path[1], "/echo"):
-		message := strings.Split(path[1], "/")[2]
-		conn.Write([]byte(fmt.Sprintf(
+	case path == "/":
+		response = ([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	case path[0:6] == "/echo/":
+		message := path[6:]
+		response = ([]byte(fmt.Sprintf(
 			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
 			len(message),
-			message)),
-		)
+			message,
+		)))
 
+	case path == "/user-agent":
+		response = ([]byte(fmt.Sprintf(
+			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+			len(request.UserAgent()),
+			request.UserAgent(),
+		)))
 	default:
-		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		response = ([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 	}
+	conn.Write(response)
 }
