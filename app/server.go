@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -16,24 +17,29 @@ func main() {
 		fmt.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
-
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
+		go handleConnection(conn)
 	}
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
 	request, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
 		os.Exit(1)
 	}
-	defer conn.Close()
 	path := request.URL.Path
 	var response []byte
 
 	switch {
 	case path == "/":
 		response = ([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	case path[0:6] == "/echo/":
+	case strings.HasPrefix(path, "/echo/"):
 		message := path[6:]
 		response = ([]byte(fmt.Sprintf(
 			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
