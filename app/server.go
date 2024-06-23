@@ -45,11 +45,20 @@ func handleConnection(conn net.Conn) {
 
 	case strings.HasPrefix(path, "/echo/"):
 		message := path[6:]
-		response = ([]byte(fmt.Sprintf(
-			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
-			len(message),
-			message,
-		)))
+		if request.Header.Get("Accept-Encoding") == "gzip" {
+			response = ([]byte(fmt.Sprintf(
+				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: %d\r\n\r\n%s",
+				len(message),
+				message,
+			)))
+		} else {
+			response = ([]byte(fmt.Sprintf(
+				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+				len(message),
+				message,
+			)))
+
+		}
 
 	case path == "/user-agent":
 		response = ([]byte(fmt.Sprintf(
