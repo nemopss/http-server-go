@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -23,14 +24,15 @@ func main() {
 			fmt.Println("Error accepting connection: ", err.Error())
 			os.Exit(1)
 		}
-		go handleConnection(conn)
+		go func() { handleConnection(conn) }()
 
 	}
 }
 
-func handleConnection(conn net.Conn, dirFlag ...string) {
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
 	request, err := http.ReadRequest(bufio.NewReader(conn))
+	fmt.Print(request.Method)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -56,7 +58,7 @@ func handleConnection(conn net.Conn, dirFlag ...string) {
 			request.UserAgent(),
 		)))
 
-	case strings.HasPrefix(path, "/files/"):
+	case request.Method == "GET" && strings.HasPrefix(path, "/files/"):
 		fileName := strings.TrimPrefix(path, "/files/")
 		if bytes, err := os.ReadFile(os.Args[2] + fileName); err == nil {
 			response = ([]byte(fmt.Sprintf(
@@ -66,6 +68,18 @@ func handleConnection(conn net.Conn, dirFlag ...string) {
 			)))
 		} else {
 			response = ([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		}
+	case request.Method == "POST" && strings.HasPrefix(path, "/files/"):
+		fileName := strings.TrimPrefix(path, "/files/")
+		length, _ := strconv.Atoi(request.Header.Get("Content-Length"))
+		content := make([]byte, length)
+		request.Body.Read(content)
+		if err := os.WriteFile(os.Args[2]+fileName, content, 0644); err == nil {
+			response = ([]byte("HTTP/1.1 201 Created\r\n\r\n"))
+		} else {
+
+			response = ([]byte("HTTP/1.1 201 Created\r\n\r\n"))
+
 		}
 	default:
 		response = ([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
