@@ -1,38 +1,75 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/8516c299-1919-428b-8c80-345e8730e130)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# HTTP Server in Go
 
-This is a starting point for Go solutions to the
-["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/courses/http-server/overview).
+This is a simple HTTP server implemented in Go. It listens for connections on a specified port and provides various HTTP endpoints to demonstrate basic HTTP server functionalities.
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-protocol that powers the web. In this challenge, you'll build a HTTP/1.1 server
-that is capable of serving multiple clients.
+## Features
 
-Along the way you'll learn about TCP servers,
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-and more.
+- **Root Endpoint (`/`)**: Returns a simple HTTP 200 OK response.
+- **Echo Endpoint (`/echo/{message}`)**: Returns the message in the URL path. Supports gzip compression if requested by the client.
+- **User-Agent Endpoint (`/user-agent`)**: Returns the User-Agent string of the client.
+- **File Endpoints**: 
+  - **GET /files/{filename}**: Serves files from the server's filesystem.
+  - **POST /files/{filename}**: Allows uploading files to the server's filesystem.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Installation
 
-# Passing the first stage
+1. Clone the repository:
 
-The entry point for your HTTP server implementation is in `app/server.go`. Study
-and uncomment the relevant code, and push your changes to pass the first stage:
+   ```sh
+   git clone https://github.com/nemopss/http-server-go.git
+   ```
+
+2. Change into the project directory:
+
+   ```sh
+   cd http-server-go
+   ```
+
+3. Build the server:
+
+   ```sh
+   go build -o http-server app/server.go
+   ```
+
+## Usage
+
+To start the server, run the following command:
 
 ```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
+./http-server /path/to/files
 ```
 
-Time to move on to the next stage!
+This will start the server and bind it to port `4221`.
 
-# Stage 2 & beyond
+### Endpoints
 
-Note: This section is for stages 2 and beyond.
+- **Root Endpoint:**
+  ```sh
+  curl http://localhost:4221/
+  ```
 
-1. Ensure you have `go (1.19)` installed locally
-1. Run `./your_server.sh` to run your program, which is implemented in
-   `app/server.go`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+- **Echo Endpoint:**
+  ```sh
+  curl http://localhost:4221/echo/your_message
+  ```
+
+  To request gzip encoding:
+  ```sh
+  curl -H "Accept-Encoding: gzip" http://localhost:4221/echo/your_message
+  ```
+
+- **User-Agent Endpoint:**
+  ```sh
+  curl http://localhost:4221/user-agent
+  ```
+
+- **File Endpoints:**
+  - **GET /files/{filename}**:
+    ```sh
+    curl http://localhost:4221/files/your_file.txt
+    ```
+
+  - **POST /files/{filename}**:
+    ```sh
+    curl -X POST --data-binary @local_file.txt http://localhost:4221/files/your_file.txt
+    ```
