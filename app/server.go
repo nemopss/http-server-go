@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -44,8 +45,10 @@ func handleConnection(conn net.Conn) {
 		response = ([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 
 	case strings.HasPrefix(path, "/echo/"):
+		encodings := request.Header.Get("Accept-Encoding")
+		splitEncodings := strings.Split(encodings, ", ")
 		message := path[6:]
-		if request.Header.Get("Accept-Encoding") == "gzip" {
+		if slices.Contains(splitEncodings, "gzip") {
 			response = ([]byte(fmt.Sprintf(
 				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: %d\r\n\r\n%s",
 				len(message),
